@@ -30,6 +30,24 @@ io.on("connection",(uniqueSoket)=>{
         console.log("disconnected")
    
     });
+    if (!players.white) {
+      players.white = uniqueSoket.id;
+      socket.emit("playerRole", "w");
+    } else if (!players.black) {
+      players.black = uniqueSoket.id;
+      socket.emit("playerRole", "b");
+    }else{
+         socket.emit("spectatorRole");
+    }
+
+    uniqueSoket.on("disconnect",()=>{
+        if(players.white===uniqueSoket.id){
+            delete players.white
+        }
+        if(players.black===uniqueSoket.id){
+            delete players.black
+        }
+    })
 })
 
 server.listen(3000,()=>{
