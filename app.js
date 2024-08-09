@@ -11,11 +11,25 @@ const players={};
 let currentplayer='W';
 
 app.set("view engine","ejs");
-app.use(express.urlencoded(path.join(__dirname,"public")));
+app.use(express.static(path.join(__dirname, "public")));
+
 
 
 app.get("/",(req,res)=>{
     res.render("index")
+})
+
+io.on("connection",(uniqueSoket)=>{
+    console.log("connection")
+    uniqueSoket.on("xyz", ()=>{
+        console.log("xyz is recivied")
+        io.emit("somthing");
+    });
+
+    uniqueSoket.on("disconnect", ()=>{
+        console.log("disconnected")
+   
+    });
 })
 
 server.listen(3000,()=>{
