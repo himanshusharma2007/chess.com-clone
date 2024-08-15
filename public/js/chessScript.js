@@ -20,21 +20,21 @@ const renderBoard = () => {
       squareElement.dataset.col = squareIndex;
 
       if (square) {
-        // If there is a piece on this square
         const pieceElement = document.createElement("div");
         pieceElement.classList.add(
           "piece",
           square.color === "w" ? "white" : "black"
         );
         pieceElement.innerText = getUniCode(square);
-        pieceElement.draggable = true; // Always make pieces draggable
+        pieceElement.draggable = true;
+
         pieceElement.addEventListener("dragstart", (e) => {
           if (playerRole === chess.turn() && playerRole === square.color) {
             draggedPiece = pieceElement;
             sourceSquare = { row: rowIndex, col: squareIndex };
             e.dataTransfer.setData("text/plain", "");
           } else {
-            e.preventDefault(); // Prevent dragging if it's not the player's turn or piece
+            e.preventDefault();
           }
         });
 
@@ -42,14 +42,16 @@ const renderBoard = () => {
           draggedPiece = null;
           sourceSquare = null;
         });
+
         squareElement.appendChild(pieceElement);
       }
 
       squareElement.addEventListener("dragover", (e) => {
-        e.preventDefault(); // Allow drop
+        e.preventDefault();
       });
 
-      squareElement.addEventListener("drop", () => {
+      squareElement.addEventListener("drop", (e) => {
+        e.preventDefault();
         if (draggedPiece) {
           const targetSquare = {
             row: parseInt(squareElement.dataset.row),
@@ -59,15 +61,27 @@ const renderBoard = () => {
         }
       });
 
-      chessBoard.appendChild(squareElement); // Append square to the board
+      chessBoard.appendChild(squareElement);
     });
   });
+  console.log("playerRole in board function ", playerRole);
+  if (playerRole == "b") {
+    chessBoard.classList.add("flipped");
+  } else {
+    chessBoard.classList.remove("flipped");
+  }
+  updateDraggableState(); // Add this line
 };
 
 const handleMove = (sourceSquare, targetSquare) => {
   console.log("Attempting move");
   console.log("Player role:", playerRole);
   console.log("Current turn:", chess.turn());
+
+  if (playerRole !== chess.turn()) {
+    console.log("Not your turn");
+    return;
+  }
 
   console.log("Move from:", sourceSquare, "to", targetSquare);
   const move = {
@@ -78,11 +92,15 @@ const handleMove = (sourceSquare, targetSquare) => {
     promotion: "q", // Always promote to queen for now
   };
 
-  const validMove = chess.move(move); // Make the move on the local board first
-  if (validMove) {
-    socket.emit("move", move); // Emit the move if it's valid
-  } else {
-    console.log("Invalid move:", move);
+  try {
+    const validMove = chess.move(move);
+    if (validMove) {
+      socket.emit("move", move);
+    } else {
+      console.log("Invalid move:", move);
+    }
+  } catch (error) {
+    console.error("Error making move:", error);
   }
 };
 const updateTurnIndicator = () => {
@@ -108,20 +126,21 @@ const updateDraggableState = () => {
   console.log("Current turn:", chess.turn());
 
   const pieces = document.querySelectorAll(".piece");
-  const currentTurn = chess.turn();
   pieces.forEach((piece) => {
     const square = piece.parentElement;
     const row = parseInt(square.dataset.row);
     const col = parseInt(square.dataset.col);
     const pieceOnSquare = chess.get(String.fromCharCode(97 + col) + (8 - row));
     if (pieceOnSquare) {
-      piece.draggable =
-        playerRole === pieceOnSquare.color && playerRole === currentTurn;
+      const isDraggable =
+        playerRole === pieceOnSquare.color && playerRole === chess.turn();
+      piece.draggable = isDraggable;
+      piece.style.cursor = isDraggable ? "grab" : "default";
       console.log(
         "Piece color:",
         pieceOnSquare.color,
         "Draggable:",
-        piece.draggable
+        isDraggable
       );
     }
   });
@@ -149,6 +168,7 @@ socket.on("playerRole", (role) => {
   playerRole = role;
   renderBoard();
   updateTurnIndicator();
+  updatePlayerRoleIndicator();
   updateDraggableState();
 });
 socket.on("spectatorRole", (role) => {
@@ -165,14 +185,14 @@ socket.on("move", (move) => {
   chess.move(move);
   renderBoard();
   updateTurnIndicator();
-
-  // Update playerRole to match the current turn
-  if (playerRole !== "") {
-    // Only update if the player is not a spectator
-    playerRole = chess.turn();
-  }
-
+  updatePlayerRoleIndicator();
   updateDraggableState();
-});
 
+  console.log(
+    "After move - Player role:",
+    playerRole,
+    "Current turn:",
+    chess.turn()
+  );
+});
 renderBoard();
