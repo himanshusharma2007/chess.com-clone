@@ -29,12 +29,12 @@ io.on("connection", (uniqueSoket) => {
   });
   if (!players.white) {
     players.white = uniqueSoket.id;
-    socket.emit("playerRole", "w");
+    uniqueSoket.emit("playerRole", "w");
   } else if (!players.black) {
     players.black = uniqueSoket.id;
-    socket.emit("playerRole", "b");
+    uniqueSoket.emit("playerRole", "b");
   } else {
-    socket.emit("spectatorRole");
+    uniqueSoket.emit("spectatorRole");
   }
 
   uniqueSoket.on("disconnect", () => {
