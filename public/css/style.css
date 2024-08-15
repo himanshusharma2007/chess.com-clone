@@ -28,11 +28,11 @@ html {
   font-size: 40px;
 }
 .square .white {
-color: white;
+  color: white;
 }
 
 .square .black {
-color: black;
+  color: black;
 }
 .light {
   background-color: rgb(237, 192, 132);
@@ -40,4 +40,10 @@ color: black;
 
 .dark {
   background-color: rgb(154, 107, 47);
+}
+.flipped {
+  transform: rotate(180deg);
+}
+.flipped .square .piece {
+  transform: rotate(180deg);
 }
