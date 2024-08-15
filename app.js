@@ -8,7 +8,6 @@ const server = http.createServer(app);
 const io = socket(server);
 const chess = new Chess();
 const players = {};
-let currentplayer = "W";
 
 app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "public")));
@@ -17,53 +16,50 @@ app.get("/", (req, res) => {
   res.render("index");
 });
 
-io.on("connection", (uniqueSoket) => {
+io.on("connection", (uniqueSocket) => {
   console.log("connection");
-  uniqueSoket.on("xyz", () => {
-    console.log("xyz is recivied");
-    io.emit("somthing");
-  });
 
-  uniqueSoket.on("disconnect", () => {
-    console.log("disconnected");
-  });
   if (!players.white) {
-    players.white = uniqueSoket.id;
-    uniqueSoket.emit("playerRole", "w");
+    players.white = uniqueSocket.id;
+    uniqueSocket.emit("playerRole", "w");
   } else if (!players.black) {
-    players.black = uniqueSoket.id;
-    uniqueSoket.emit("playerRole", "b");
+    players.black = uniqueSocket.id;
+    uniqueSocket.emit("playerRole", "b");
   } else {
-    uniqueSoket.emit("spectatorRole");
+    uniqueSocket.emit("spectatorRole");
   }
 
-  uniqueSoket.on("disconnect", () => {
-    if (players.white === uniqueSoket.id) {
+  uniqueSocket.on("disconnect", () => {
+    if (players.white === uniqueSocket.id) {
       delete players.white;
     }
-    if (players.black === uniqueSoket.id) {
+    if (players.black === uniqueSocket.id) {
       delete players.black;
     }
   });
 
-  uniqueSoket.on("move", (move) => {
+  uniqueSocket.on("move", (move) => {
     try {
-      if (chess.move() === "w" && uniqueSoket.id !== players.white) return;
-      if (chess.move() === "b" && uniqueSoket.id !== players.black) return;
+      // Check if the player making the move has the correct turn
+      const currentTurn = chess.turn();
+      if (
+        (currentTurn === "w" && uniqueSocket.id !== players.white) ||
+        (currentTurn === "b" && uniqueSocket.id !== players.black)
+      ) {
+        uniqueSocket.emit("InvalidMove", "It's not your turn!");
+        return;
+      }
 
-      let result = chess.move(move);
+      let result = chess.move(move); // Make the move
+
       if (result) {
-        currentplayer = chess.turn();
-        io.emit("movem", move);
-        io.emit("boardState", chess.fen());
+        io.emit("move", move); // Emit the move to all clients
+        io.emit("boardState", chess.fen()); // Emit the updated board state
       } else {
-        console.log("Invalid move :>> ", move);
-        uniqueSoket.emit("InvalidMove :>> ", move);
+        uniqueSocket.emit("InvalidMove", move);
       }
     } catch (error) {
-      console.log("error :>> ", error);
-      console.log("Invalid move :>> ", move);
-      uniqueSoket.emit("InvalidMove :>> ", move);
+      uniqueSocket.emit("InvalidMove", move);
     }
   });
 });
