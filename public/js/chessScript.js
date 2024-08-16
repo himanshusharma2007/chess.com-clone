@@ -6,8 +6,8 @@ let sourceSquare = null;
 let playerRole = null;
 
 const renderBoard = () => {
-  chessBoard.innerHTML = "";
   const board = chess.board();
+  chessBoard.innerHTML = ""; // Clear previous board state
 
   board.forEach((row, rowIndex) => {
     row.forEach((square, squareIndex) => {
