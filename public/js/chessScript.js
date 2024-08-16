@@ -103,15 +103,7 @@ const handleMove = (sourceSquare, targetSquare) => {
     console.error("Error making move:", error);
   }
 };
-const updateTurnIndicator = () => {
-  const turnIndicator = document.getElementById("turn-indicator");
-  if (turnIndicator) {
-    turnIndicator.textContent = `Current turn: ${
-      chess.turn() === "w" ? "White" : "Black"
-    }`;
-    turnIndicator.style.color = chess.turn() === "w" ? "white" : "black";
-  }
-};
+
 const updatePlayerRoleIndicator = () => {
   const roleIndicator = document.getElementById("player-role");
   if (roleIndicator) {
@@ -167,7 +159,6 @@ socket.on("playerRole", (role) => {
   console.log("Received player role:", role);
   playerRole = role;
   renderBoard();
-  updateTurnIndicator();
   updatePlayerRoleIndicator();
   updateDraggableState();
 });
@@ -184,7 +175,6 @@ socket.on("boardState", (fen) => {
 socket.on("move", (move) => {
   chess.move(move);
   renderBoard();
-  updateTurnIndicator();
   updatePlayerRoleIndicator();
   updateDraggableState();
 
